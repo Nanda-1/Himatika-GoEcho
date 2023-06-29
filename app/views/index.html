@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daftar Pengguna</title>
+</head>
+<body>
+    <h1>Daftar Pengguna</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $key, $user := .Users}}
+            <tr>
+                <td>{{$user.ID}}</td>
+                <td>{{$user.Name}}</td>
+                <td>{{$user.Email}}</td>
+                <td>
+                    <a href="/users/{{$user.ID}}/edit">Edit</a>
+                    <form action="/users/{{$user.ID}}/delete" method="POST" style="display:inline">
+                        <button type="submit" onclick="return confirm('Anda yakin ingin menghapus pengguna ini?')">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <h2>Tambah Pengguna Baru</h2>
+    <a href="/users/new">Tambah Pengguna</a>
+</body>
+</html>
