@@ -14,7 +14,12 @@ func Router() {
 	e.POST("/login", controller.Login)
 	e.POST("/refresh-token", controller.RefreshToken)
 
-	// Tambahkan rute-rute lainnya di sini
+	//Workshop
+	e.POST("/create-workshop", controller.CreateWorkshop)
+	e.GET("/getall-workshop", controller.GetAllWorkshop)
+	e.POST("/pendaftaran-workshop", controller.CreatePendaftaran)
+	e.POST("/absen-workshop", controller.CreateAbsensi)
+	e.POST("/props", controller.UploadProposal)
 
 	e.Start(":8080")
 }

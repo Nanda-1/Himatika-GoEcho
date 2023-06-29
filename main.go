@@ -1,6 +1,7 @@
 package main
 
 import (
+	"echoGo/app/models"
 	"echoGo/app/router"
 	"echoGo/db"
 )
@@ -8,5 +9,6 @@ import (
 func main() {
 	db.InitDb()
 	// db.Db.AutoMigrate(&models.Anggota{}, &models.AnggotaDetails{}, &models.Roles{})
+	db.Db.AutoMigrate(&models.Workshop{}, &models.AbsensiWorkshop{}, &models.PendaftaranWorkshop{}, &models.PropWorkshop{})
 	router.Router()
 }
