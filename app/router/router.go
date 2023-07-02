@@ -20,6 +20,8 @@ func Router() {
 	e.POST("/pendaftaran-workshop", controller.CreatePendaftaran)
 	e.POST("/absen-workshop", controller.CreateAbsensi)
 	e.POST("/props", controller.UploadProposal)
-
+	e.POST("/lpj", controller.UploadLpj)
+	e.POST("/dokumentasi", controller.UploadDokumentasi)
+	
 	e.Start(":8080")
 }

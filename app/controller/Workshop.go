@@ -81,7 +81,7 @@ func CreateWorkshop(c echo.Context) error {
 func GetAllWorkshop(c echo.Context) error {
 	workshops := []models.Workshop{}
 
-	if err := db.Db.Preload("Pendaftaran").Preload("Absensi").Preload("PropWorkshop").Find(&workshops).Error; err != nil {
+	if err := db.Db.Preload("Pendaftaran").Preload("Absensi").Preload("PropWorkshop").Preload("LpjWorkshop").Preload("Dokumentasi").Find(&workshops).Error; err != nil {
 		errorMsg := err.Error()
 		res := models.JsonResponse{
 			Success: false,
@@ -321,6 +321,236 @@ func UploadProposal(c echo.Context) error {
 
 		// Mengupdate Workshop dengan menambahkan PropWorkshop baru
 		judul.PropWorkshop = upload
+		if err := db.Db.Save(judul).Error; err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		res.Data = upload
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func UploadLpj(c echo.Context) error {
+	res := models.JsonResponse{Success: true}
+	tema := c.FormValue("judul_workshop")
+	nim := c.FormValue("nim")
+	name := c.FormValue("name")
+	ThnPengurusan := c.FormValue("tahun_pengurusan")
+
+	// Mencari workshop berdasarkan judul
+	judul, err := models.GetWorkshopByJudul(db.Db, tema)
+	if err != nil {
+		errorMsg := err.Error()
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	if judul == nil {
+		errorMsg := "Judul tidak ditemukan"
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusNotFound, res)
+	}
+
+	fileDir := "./uploads"
+	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
+		os.Mkdir(fileDir, os.ModePerm)
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		errorMsg := err.Error()
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	files := form.File["file"]
+	if len(files) == 0 {
+		errorMsg := "No files uploaded. Please upload at least one file."
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	var uploads []*models.LpjWorkshop
+	for _, file := range files {
+		fileUUID := uuid.New().String() // Membuat UUID unik untuk setiap file
+		// uuidString := fileUUID.String()
+		filename := fileUUID + "_" + file.Filename
+		filename = strings.ReplaceAll(filename, " ", "_") // Mengganti spasi dengan garis bawah
+		filePath := filepath.Join(fileDir, filename)
+
+		src, err := file.Open()
+		if err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer src.Close()
+
+		dst, err := os.Create(filePath)
+		if err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer dst.Close()
+
+		if _, err := io.Copy(dst, src); err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		upload := &models.LpjWorkshop{
+			WorkshopID:      judul.ID,
+			Nim:             nim,
+			Name:            name,
+			TahunPengurusan: ThnPengurusan,
+			PathFile:        filePath,
+			NameFile:        filename,
+			UploadComplete:  true,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		}
+
+		uploads = append(uploads, upload)
+	}
+
+	for _, upload := range uploads {
+		if err := models.CreateLpj(db.Db, upload); err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		// Mengupdate Workshop dengan menambahkan PropWorkshop baru
+		judul.LpjWorkshop = upload
+		if err := db.Db.Save(judul).Error; err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		res.Data = upload
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func UploadDokumentasi(c echo.Context) error {
+	res := models.JsonResponse{Success: true}
+	tema := c.FormValue("judul_workshop")
+	nim := c.FormValue("nim")
+	name := c.FormValue("name")
+	ThnPengurusan := c.FormValue("tahun_pengurusan")
+
+	// Mencari workshop berdasarkan judul
+	judul, err := models.GetWorkshopByJudul(db.Db, tema)
+	if err != nil {
+		errorMsg := err.Error()
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	if judul == nil {
+		errorMsg := "Judul tidak ditemukan"
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusNotFound, res)
+	}
+
+	fileDir := "./uploads"
+	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
+		os.Mkdir(fileDir, os.ModePerm)
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		errorMsg := err.Error()
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	files := form.File["file"]
+	if len(files) == 0 {
+		errorMsg := "No files uploaded. Please upload at least one file."
+		res.Success = false
+		res.Error = &errorMsg
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	var uploads []*models.DokumentasiWorkshop
+	for _, file := range files {
+		fileUUID := uuid.New().String() // Membuat UUID unik untuk setiap file
+		// uuidString := fileUUID.String()
+		filename := fileUUID + "_" + file.Filename
+		filename = strings.ReplaceAll(filename, " ", "_") // Mengganti spasi dengan garis bawah
+		filePath := filepath.Join(fileDir, filename)
+
+		src, err := file.Open()
+		if err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer src.Close()
+
+		dst, err := os.Create(filePath)
+		if err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer dst.Close()
+
+		if _, err := io.Copy(dst, src); err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		upload := &models.DokumentasiWorkshop{
+			WorkshopID:      judul.ID,
+			Nim:             nim,
+			Name:            name,
+			TahunPengurusan: ThnPengurusan,
+			PathFile:        filePath,
+			NameFile:        filename,
+			UploadComplete:  true,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		}
+
+		uploads = append(uploads, upload)
+	}
+
+	for _, upload := range uploads {
+		if err := models.CreateDukumentasi(db.Db, upload); err != nil {
+			errorMsg := err.Error()
+			res.Success = false
+			res.Error = &errorMsg
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		// Mengupdate Workshop dengan menambahkan PropWorkshop baru
+		judul.Dokumentasi = upload
 		if err := db.Db.Save(judul).Error; err != nil {
 			errorMsg := err.Error()
 			res.Success = false

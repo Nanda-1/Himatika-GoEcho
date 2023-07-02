@@ -119,3 +119,13 @@ func CreateAbsensi(db *gorm.DB, P *AbsensiWorkshop) error {
 func CreateProps(db *gorm.DB, P *PropWorkshop) error {
 	return db.Create(P).Error
 }
+
+// Lpj
+func CreateLpj(db *gorm.DB, P *LpjWorkshop) error {
+	return db.Create(P).Error
+}
+
+// Lpj
+func CreateDukumentasi(db *gorm.DB, P *DokumentasiWorkshop) error {
+	return db.Create(P).Error
+}
